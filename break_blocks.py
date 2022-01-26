@@ -28,11 +28,11 @@ def mine(td,vd,subsets):
 
 
 def higlight(pos,cam,td):
-    for i in range(1,15):
-        wp=pos+cam.forward*i
-        x=floor(wp.x)
-        y=floor(wp.y+3)
-        z=floor(wp.z)
+    for i in range(1,32):
+        wp=pos+Vec3(0,1.86,0)+cam.forward*(i*0.5)
+        x=round(wp.x)
+        y=floor(wp.y)
+        z=round(wp.z)
         lookBlock.x=x
         lookBlock.y=y+0.5
         lookBlock.z=z

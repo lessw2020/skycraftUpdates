@@ -49,6 +49,10 @@ def update():
 
     for i in range(-step,step):
         if terrain.td.get((x,y+i,z))=="t":
+            if terrain.td.get((x,y+i+1,z))=="t":
+                target=y+i+height+1
+                blockFound=True
+                break
             target=y+i+height
             blockFound=True
             break
@@ -59,4 +63,6 @@ def update():
 
         player.y-=9.8*time.dt 
 terrain.genTerrain()
+fox=Entity(model='fox', texture='fox')
+fox.position=Vec3(0,2,11)
 app.run()

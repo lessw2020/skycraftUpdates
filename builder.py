@@ -18,4 +18,5 @@ def gapShell(td,bsite):
         x,y,z=floor(p)
         key=(x,y,z)
         res=td.get(key)
-        
+        if res is None:
+            td[key]='g'

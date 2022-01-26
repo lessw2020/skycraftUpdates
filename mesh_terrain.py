@@ -1,4 +1,5 @@
 from email.policy import default
+from multiprocessing.sharedctypes import Value
 from random import *
 from ursina import *
 from perlin import Perlin
@@ -7,7 +8,7 @@ from infiniteTerrain import swirlEngine
 from break_blocks import *
 from builder import *
 
-defaultBlock='grass'
+defaultBlock='snow'
 
 class Meshterrain:
     def __init__(self):
@@ -33,9 +34,18 @@ class Meshterrain:
             e.texture_scale*=64/e.texture.width
 
             self.subsets.append(e)
-    
+
+
     def update(self, pos,cam):
         higlight(pos,cam,self.td)
+        if lookBlock.visible:
+            for key,value in held_keys.items():
+                if key=='left mouse' and value==1:
+                    epi=mine(self.td,self.vd,self.subsets)
+                    if epi is not None:
+                        self.genWalls(epi[0],epi[1])
+                        self.subsets[epi[1]].model.generate()
+
 
     def input(self,key):
         if key=='left mouse up' and lookBlock.visible:
@@ -49,6 +59,7 @@ class Meshterrain:
             bsite= checkBuild(key,lookBlock.position,self.td)
             if bsite is not None:
                 self.genBlock(floor(bsite.x),floor(bsite.y),floor(bsite.z),subset=0,blockType=defaultBlock)
+                gapShell(self.td,bsite)
                 self.subsets[0].model.generate()
 
     def genWalls(self,epi,subset):
