@@ -1,142 +1,174 @@
-from email.policy import default
-from multiprocessing.sharedctypes import Value
-from random import *
-from ursina import *
+
+   
 from perlin import Perlin
-from perlin_module import PerlinNoise
+from ursina import *
+from random import random
 from infiniteTerrain import swirlEngine
 from break_blocks import *
 from builder import *
-
-defaultBlock='snow'
+from config import g_sixAxis
 
 class Meshterrain:
-    def __init__(self):
+    def __init__(this,_sub,_cam):
         
-        self.subsets=[]
-        self.numSubsets=128
+        this.subject = _sub
+        this.camera = _cam
 
-        self.subWidth=4
-        self.Swirl=swirlEngine(self.subWidth)
-        self.currentSubset=0
-        self.block=load_model('block.obj')
-        self.numVertices=len(self.block.vertices)
+        this.block = load_model('block.obj')
+        this.textureAtlas = 'texture_atlas_3.png'
+        this.numVertices = len(this.block.vertices)
+
+        this.subsets = []
+        this.numSubsets = 512
         
+        # Must be even number! See genTerrain()
+        this.subWidth = 10 
+        this.swirlEngine = swirlEngine(this.subWidth)
+        this.currentSubset = 0
 
-        self.textureAtlas='texture_atlas_3.png'
-        self.td={}
-        self.vd={}
+        # Our terrain dictionary :D
+        this.td = {}
 
-        self.perlin=Perlin()
-        for i in range(0,self.numSubsets):
-            e=Entity(model=Mesh(),
-            texture=self.textureAtlas)
+        # Our vertex dictionary -- for mining.
+        this.vd = {}
+
+        this.perlin = Perlin()
+
+        # Instantiate our subset Entities.
+        this.setup_subsets()
+    
+    def setup_subsets(this):
+        ptrAtlas=this.textureAtlas
+        for i in range(0,this.numSubsets):
+            e = Entity( model=Mesh(),
+                        texture=ptrAtlas)
             e.texture_scale*=64/e.texture.width
+            this.subsets.append(e)
 
-            self.subsets.append(e)
+    def do_mining(this):
+        epi = mine(this.td,this.vd,this.subsets)
+        if epi != None:
+            this.genWalls(epi[0],epi[1])
+            this.subsets[epi[1]].model.generate()
 
+    # Highlight looked-at block :)
+    # !*!*!*!*!*!*!
+    # We don't need to pass in pos and cam anymore?!
+    def update(this,pos,cam):
+        highlight(pos,cam,this.td)
+        # Blister-mining!
+        if lookBlock.visible :
+            if held_keys['shift'] and held_keys['left mouse']:
+                this.do_mining()
+            # for key, value in held_keys.items():
+            #     if key=='left mouse' and value==1:
+            #         this.do_mining()
 
-    def update(self, pos,cam):
-        higlight(pos,cam,self.td)
-        if lookBlock.visible:
-            for key,value in held_keys.items():
-                if key=='left mouse' and value==1:
-                    epi=mine(self.td,self.vd,self.subsets)
-                    if epi is not None:
-                        self.genWalls(epi[0],epi[1])
-                        self.subsets[epi[1]].model.generate()
+    def input(this,key):
+        if key=='left mouse up' and lookBlock.visible :
+            this.do_mining()
+        # Building :)
+        if key=='right mouse up' and lookBlock.visible :
+            bsite = checkBuild( lookBlock.position,this.td,
+                                this.camera.forward,
+                                this.subject.position+Vec3(0,this.subject.height,0))
+            if bsite!=None:
+                this.genBlock(floor(bsite.x),floor(bsite.y),floor(bsite.z),subset=0,blockType='grass')
+                gapShell(this.td,bsite)
+                this.subsets[0].model.generate()
+    
+    # I.e. after mining, to create illusion of depth.
+    def genWalls(this,epi,subset):
 
-
-    def input(self,key):
-        if key=='left mouse up' and lookBlock.visible:
-            epi= mine(self.td,self.vd,self.subsets)
-            if epi is None:
-                return
-            self.genWalls(epi[0],epi[1])
-            self.subsets[epi[1]].model.generate()
-
-        if key=='right mouse up'and lookBlock.visible==True:
-            bsite= checkBuild(key,lookBlock.position,self.td)
-            if bsite is not None:
-                self.genBlock(floor(bsite.x),floor(bsite.y),floor(bsite.z),subset=0,blockType=defaultBlock)
-                gapShell(self.td,bsite)
-                self.subsets[0].model.generate()
-
-    def genWalls(self,epi,subset):
-        if epi==None : return
-        wp=[
-            Vec3(0,1,0),
-            Vec3(0,-1,0),
-            Vec3(-1,0,0),
-            Vec3(1,0,0),
-            Vec3(0,0,-1),
-            Vec3(0,0,1),
-        ]
-        for i in range(6):
-            np=epi+wp[i]
-            if self.td.get((floor(np.x),
+        if epi is None: return
+        # Refactor this -- place in mining_system 
+        # except for cal to genBlock?
+        
+        for i in range(0,6):
+            np = epi + g_sixAxis[i]
+            if this.td.get( (floor(np.x),
                             floor(np.y),
-                            floor(np.z)))==None:
-                            self.genBlock(np.x,np.y,np.z,subset,gap=False,blockType='soil')
+                            floor(np.z)))is None:
+                this.genBlock(np.x,np.y,np.z,subset,gap=False,blockType='soil')
 
-    def genBlock(self,x,y,z,subset =-1,gap=True,blockType=defaultBlock):
-        if subset==-1:
-            subset=self.currentSubset
-        
-        model=self.subsets[subset].model
-        model.vertices.extend([Vec3(x,y,z)+v for v in self.block.vertices])
-        
-        c=random.random()-0.5
 
-        model.colors.extend((Vec4(1-c,1-c,1-c,1),)*self.numVertices)
-        if blockType=='grass':
-            uu=8
-            uv=7
-        elif blockType=='soil':
-            uu=10
-            uv=7
-            if random.random()>.5:
-                uu=8
-                uv=5
+    def genBlock(this,x,y,z,subset=-1,gap=True,blockType='grass'):
+        if subset==-1: subset=this.currentSubset
+        # Extend or add to the vertices of our model.
+        model = this.subsets[subset].model
+
+        model.vertices.extend([ Vec3(x,y,z) + v for v in 
+                                this.block.vertices])
+        # Record terrain in dictionary :)
+        this.td[(floor(x),floor(y),floor(z))] = 't'
+        # Also, record gap above this position to
+        # correct for spawning walls after mining.
+        if gap:
+            key=((floor(x),floor(y+1),floor(z)))
+            if this.td.get(key) is None:
+                this.td[key]='g'
+
+        # Record subset index and first vertex of this block.
+        vob = (subset, len(model.vertices)-37)
+        this.vd[(floor(x),
+                floor(y),
+                floor(z))] = vob
+
+        # Decide random tint for colour of block :)
+        c = random()-0.5
+        model.colors.extend( (Vec4(1-c,1-c,1-c,1),)*
+                                this.numVertices)
+
+        
+        # This is the texture atlas co-ord for grass :)
+        uu = 8
+        uv = 7
+        if blockType=='soil':
+            uu,uv=g_textureMap.get('soil')
+
         elif blockType=='stone':
-            uu=8
-            uv=5
-        if y > 2 or blockType=='snow':
-            uu=8
-            uv=6
-        model.uvs.extend([Vec2(uu,uv)+u for u in self.block.uvs])
-        self.td[(floor(x),
-                floor(y),
-                floor(z)
-                )] ='t'
-        if gap==True:
-            key=(floor(x),
-                floor(y+1),
-                floor(z)
-                ) 
-            if self.td.get(key)==None:
-                self.td[key]='g'
-        
-        vob=(subset,len(model.vertices)-37)
-        self.vd[(floor(x),
-                floor(y),
-                floor(z)
-                )] = vob
-        
+            uu,uv=g_textureMap.get('stone')
 
+        elif blockType=='ice':
+            uu,uv=g_textureMap.get('ice')
 
-    def genTerrain(self):
-        x = floor(self.Swirl.pos.x)
-        z = floor(self.Swirl.pos.y)
-        d = self.subWidth//2
+        # Randomly place stone blocks.
+        if y <-30 and random() > 0.86:
+            uu,uv=g_textureMap.get('stone')
+
+        # If high enough, cap with snow blocks :D
+        if y > 2:
+            uu,uv=g_textureMap.get('snow')
+
+        model.uvs.extend([Vec2(uu,uv) + u for u in this.block.uvs])
+
+    def genTerrain(this):
+        # Get current position as we swirl around world.
+        x = floor(this.swirlEngine.pos.x)
+        z = floor(this.swirlEngine.pos.y)
+
+        d = int(this.subWidth*0.5)
+        ptrGitHeight=this.perlin.getHeight
+
+        xk=0
+        zj=0
+
         for k in range(-d,d):
+            xk=x+k
+
             for j in range(-d,d):
-                y=floor(self.perlin.getHeight(x+k,z+j))
-                if self.td.get((floor(x+k),floor(y),floor(z+j))) ==None:
-                    self.genBlock(x+k,y,z+j)
-        self.subsets[self.currentSubset].model.generate()
-        if self.currentSubset<self.numSubsets-1:
-            self.currentSubset+=1
-        else:
-            self.currentSubset=0
-        self.Swirl.move()
+
+                zj=z+j
+
+                y = floor(ptrGitHeight(xk,zj))
+                if this.td.get( (floor(xk),
+                                floor(y),
+                                floor(zj)))is None:
+                    this.genBlock(xk,y,zj,blockType='grass')
+
+        this.subsets[this.currentSubset].model.generate()
+        # Current subset hack ;)
+        if this.currentSubset<this.numSubsets-1:
+            this.currentSubset+=1
+        else: this.currentSubset=0
+        this.swirlEngine.move()

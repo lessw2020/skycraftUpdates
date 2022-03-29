@@ -1,10 +1,10 @@
-"""Perlin Noise calculating lib.
-Includes each_with_each, hasher and RandVec
-so that all part of a single file.
-"""
 import math
 import random
-from collections.abc import Iterable
+# from collections import Iterable
+# ***
+from _collections_abc import Iterable
+# Above is perlin fix for some people (instead of 'collections')
+# Thanks to '#1 Coder' see comment on mesh craft vid 13.
 from typing import Optional, Union
 
 #from rand_vec import RandVec
@@ -235,4 +235,3 @@ class PerlinNoise(object):
             ).get_weighted_val(coordinates)
             for coors in each_with_each(coor_bounding_box)
         ])
-

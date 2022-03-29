@@ -9,6 +9,12 @@ textureMap = [
               ('ice', 9,7),
               ('snow', 8,6),
 ]
+g_textureMap={'grass':(8,7),
+                'soil':(10,7),
+                'stone':(8,5),
+                'ice':(9,7),
+                'snow':(8,6), 
+        }
 
 #load blockStyles
 g_blockStyles = {}
