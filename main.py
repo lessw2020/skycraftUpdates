@@ -1,7 +1,7 @@
 from typing import Counter
 from ursina import *
 app=Ursina()
-
+g_step=1/255
 
 from ursina.prefabs.first_person_controller import FirstPersonController
 from mesh_terrain import Meshterrain
@@ -9,8 +9,12 @@ from flakes import snowFall
 from mobMove import *
 from inventory import *
 
-window.color=color.rgb(179,232,255)
-skyStuff=Sky()
+daySky='daySky.jpg'
+nightSky='nightSky.jpeg'
+#window.color=color.rgb(179,232,255)
+window.color=color.rgb(30,30,40)
+skyStuff=Sky(texture=daySky)
+#Sky(texture='nightSky.jpeg')
 skyStuff.color=window.color
 player=FirstPersonController()
 player.gravity= 0
@@ -36,11 +40,37 @@ def input(key):
     inv_input(key,player,mouse)
 
 #count=0
+gettingBrighter=True
+daytime=True
+daycycle=0
 def update():
-    global count,pX,pZ,genTerrainFunction
+    global gettingBrighter, count,pX,pZ,genTerrainFunction, daycycle, daytime
     terrain.update(player.position,camera)
     mob_movement(panda,player.position,terrain.td)
     count+=1
+    if count==2:
+        if gettingBrighter:
+
+            window.color[0]+=g_step
+            window.color[1]+=g_step
+            window.color[2]+=g_step
+            daycycle+=1
+        else:
+            window.color[0]-=g_step
+            window.color[1]-=g_step
+            window.color[2]-=g_step
+            daycycle+=1
+
+        if window.color[2]>=1.0 or window.color[2]<=.01:
+            gettingBrighter=not gettingBrighter
+            
+        skyStuff.color=window.color
+        if daycycle==200:
+            skyStuff.texture=nightSky
+        elif daycycle>=400:
+            skyStuff.texture=daySky
+            daycycle=0
+
     if count==2:
         count=0
         if generatingTerrain:
