@@ -41,35 +41,42 @@ def input(key):
 
 #count=0
 gettingBrighter=True
+maxBright=220
+minBright=50
+timeCount=0
 daytime=True
 daycycle=0
+timeDiff=maxBright-minBright
 def update():
-    global gettingBrighter, count,pX,pZ,genTerrainFunction, daycycle, daytime
+    global timeDiff, gettingBrighter, count,pX,pZ,genTerrainFunction, daycycle, daytime,maxBright, minBright,timeCount
     terrain.update(player.position,camera)
     mob_movement(panda,player.position,terrain.td)
     count+=1
-    if count==2:
-        if gettingBrighter:
+    timeCount+=1
+    
+    if gettingBrighter:
 
-            window.color[0]+=g_step
-            window.color[1]+=g_step
-            window.color[2]+=g_step
-            daycycle+=1
-        else:
-            window.color[0]-=g_step
-            window.color[1]-=g_step
-            window.color[2]-=g_step
-            daycycle+=1
+        window.color[0]+=g_step
+        window.color[1]+=g_step
+        window.color[2]+=g_step
+        daycycle+=1
+    else:
+        window.color[0]-=g_step
+        window.color[1]-=g_step
+        window.color[2]-=g_step
+        daycycle+=1
 
-        if window.color[2]>=1.0 or window.color[2]<=.01:
-            gettingBrighter=not gettingBrighter
-            
-        skyStuff.color=window.color
-        if daycycle==200:
-            skyStuff.texture=nightSky
-        elif daycycle>=400:
-            skyStuff.texture=daySky
-            daycycle=0
+    if timeCount%timeDiff==0:
+
+        gettingBrighter=not gettingBrighter
+
+        
+    skyStuff.color=window.color
+    if daycycle==timeDiff*2:
+        skyStuff.texture=nightSky
+    elif daycycle>=timeDiff*4:
+        skyStuff.texture=daySky
+        daycycle=0
 
     if count==2:
         count=0
