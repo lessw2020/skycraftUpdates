@@ -38,8 +38,8 @@ def input(key):
         generatingTerrain=not generatingTerrain
         
     inv_input(key,player,mouse)
-
-#count=0
+timeSlower=2
+timeFilter=0
 gettingBrighter=True
 maxBright=220
 minBright=50
@@ -48,35 +48,38 @@ daytime=True
 daycycle=0
 timeDiff=maxBright-minBright
 def update():
-    global timeDiff, gettingBrighter, count,pX,pZ,genTerrainFunction, daycycle, daytime,maxBright, minBright,timeCount
+    global timeFilter, timeSlower, timeDiff, gettingBrighter, count,pX,pZ,genTerrainFunction, daycycle, daytime,maxBright, minBright,timeCount
     terrain.update(player.position,camera)
     mob_movement(panda,player.position,terrain.td)
     count+=1
     timeCount+=1
-    
-    if gettingBrighter:
+    timeFilter+=1
+    if timeFilter==timeSlower:
+        timeFilter=0
+        if gettingBrighter:
 
-        window.color[0]+=g_step
-        window.color[1]+=g_step
-        window.color[2]+=g_step
-        daycycle+=1
-    else:
-        window.color[0]-=g_step
-        window.color[1]-=g_step
-        window.color[2]-=g_step
-        daycycle+=1
+            window.color[0]+=g_step
+            window.color[1]+=g_step
+            window.color[2]+=g_step
+            daycycle+=1
+        else:
+            window.color[0]-=g_step
+            window.color[1]-=g_step
+            window.color[2]-=g_step
+            daycycle+=1
 
-    if timeCount%timeDiff==0:
+        if timeCount%timeDiff==0:
 
-        gettingBrighter=not gettingBrighter
+            gettingBrighter=not gettingBrighter
 
-        
-    skyStuff.color=window.color
-    if daycycle==timeDiff*2:
-        skyStuff.texture=nightSky
-    elif daycycle>=timeDiff*4:
-        skyStuff.texture=daySky
-        daycycle=0
+            
+        skyStuff.color=window.color
+        print(f'daycycle is {daycycle}')
+        if daycycle==timeDiff*2:
+            skyStuff.texture=nightSky
+        elif daycycle>=timeDiff*4:
+            skyStuff.texture=daySky
+            daycycle=0
 
     if count==2:
         count=0
