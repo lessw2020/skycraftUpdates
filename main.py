@@ -38,10 +38,10 @@ def input(key):
         generatingTerrain=not generatingTerrain
         
     inv_input(key,player,mouse)
-timeSlower=2
+timeSlower=4
 timeFilter=0
 gettingBrighter=True
-maxBright=220
+maxBright=250
 minBright=50
 timeCount=0
 daytime=True
@@ -68,13 +68,12 @@ def update():
             window.color[2]-=g_step
             daycycle+=1
 
-        if timeCount%timeDiff==0:
+        if timeCount%(timeDiff*timeSlower)==0:
 
             gettingBrighter=not gettingBrighter
 
             
         skyStuff.color=window.color
-        print(f'daycycle is {daycycle}')
         if daycycle==timeDiff*2:
             skyStuff.texture=nightSky
         elif daycycle>=timeDiff*4:
